@@ -38,6 +38,21 @@ const data = computed(() => periodData[period.value])
 const regionFactor = computed(() => region.value === 'All regions' ? 1 : 0.24)
 const shownTotal = computed(() => region.value === 'All regions' ? data.value.total : '$' + (parseFloat(data.value.total.slice(1)) * regionFactor.value).toFixed(1) + 'M')
 const shownImpact = computed(() => data.value.impact.map((value, index) => Math.max(18, Math.round(value * (region.value === 'All regions' ? 1 : 0.8) + (index % 2)))))
+const hoveredSpend = ref(null)
+const hoveredClimate = ref(null)
+const hoveredImpact = ref(null)
+const hoveredProjection = ref(null)
+const climateValues = [31, 38, 35, 48, 44, 63, 55, 77, 68, 86, 82, 94]
+const climateLabels = ['JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC', 'JAN', 'FEB', 'MAR', 'APR', 'MAY']
+const projectionValues = [2.4, 3.1, 2.8, 4.2, 3.8, 4.9]
+const projectionLabels = ['JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV']
+const fundingPoints = computed(() => data.value.spend.map((committed, index) => ({
+  x: index * 114,
+  committed,
+  awarded: +(committed * 0.88).toFixed(1),
+  committedY: Math.max(12, 250 - committed * 18),
+  awardedY: Math.max(12, 250 - committed * 0.88 * 18),
+})))
 
 const fundingRows = [
   { name: 'Drought resilience & water reuse', agency: 'Water Resources', amount: '$12.8M', status: 'On track', progress: 78, tone: 'good' },
@@ -107,20 +122,20 @@ function selectPeriod(value) { period.value = value }
         <div class="chart-legend"><span><i class="legend-line coral"></i> Awarded</span><span><i class="legend-line ink"></i> Committed</span><span class="chart-total">{{ data.approved }} <small>awarded</small></span></div>
         <div class="line-chart" role="img" aria-label="Funding awarded trend chart">
           <div class="y-axis"><span>$10M</span><span>$7.5M</span><span>$5M</span><span>$2.5M</span><span>$0</span></div>
-          <div class="chart-area"><div class="grid-lines"><i></i><i></i><i></i><i></i><i></i></div><svg viewBox="0 0 800 250" preserveAspectRatio="none"><polyline class="committed-path" points="0,200 114,181 228,190 342,152 456,168 570,137 684,120 800,89"/><polyline class="awarded-path" points="0,214 114,198 228,202 342,176 456,187 570,165 684,148 800,125"/><circle cx="800" cy="125" r="5" class="end-dot"/></svg><div class="x-axis"><span v-for="label in data.labels" :key="label">{{ label }}</span></div></div>
+          <div class="chart-area"><div class="grid-lines"><i></i><i></i><i></i><i></i><i></i></div><svg viewBox="0 0 800 250" preserveAspectRatio="none"><polyline class="committed-path" points="0,200 114,181 228,190 342,152 456,168 570,137 684,120 800,89"/><polyline class="awarded-path" points="0,214 114,198 228,202 342,176 456,187 570,165 684,148 800,125"/><circle v-for="(point, index) in fundingPoints" :key="index" :cx="point.x" :cy="point.awardedY" r="7" class="hover-point" tabindex="0" @mouseenter="hoveredSpend = { label: data.labels[index], awarded: point.awarded, committed: point.committed }" @mouseleave="hoveredSpend = null" @focus="hoveredSpend = { label: data.labels[index], awarded: point.awarded, committed: point.committed }" @blur="hoveredSpend = null"/><circle cx="800" cy="125" r="5" class="end-dot"/></svg><div v-if="hoveredSpend" class="chart-tooltip" :style="{ left: `${(data.labels.indexOf(hoveredSpend.label) / (data.labels.length - 1)) * 100}%` }"><b>{{ hoveredSpend.label }}</b><span>Awarded {{ hoveredSpend.awarded }}M</span><span>Committed {{ hoveredSpend.committed }}M</span></div><div class="x-axis"><span v-for="label in data.labels" :key="label">{{ label }}</span></div></div>
         </div>
       </article>
 
       <article class="panel climate-panel">
         <div class="panel-heading"><div><p class="kicker">CLIMATE SIGNAL</p><h3>Heat &amp; water stress</h3></div><span class="alert-badge">2 signals</span></div>
         <div class="climate-main"><div class="ring-wrap"><div class="ring"><strong>74</strong><span>stress index</span></div></div><div class="climate-copy"><p>Higher than <b>89%</b> of comparable cities</p><span class="trend-label">↑ 9 points this year</span></div></div>
-        <div class="mini-bars"><div v-for="(height, index) in [31, 38, 35, 48, 44, 63, 55, 77, 68, 86, 82, 94]" :key="index" class="bar" :style="{ height: height + '%' }"></div></div><div class="mini-labels"><span>JUN</span><span>SEP</span><span>DEC</span><span>MAR</span></div>
+        <div class="mini-bars"><div v-for="(height, index) in climateValues" :key="index" class="bar" :class="{ hovered: hoveredClimate?.index === index }" :style="{ height: height + '%' }" tabindex="0" @mouseenter="hoveredClimate = { index, label: climateLabels[index], value: height }" @mouseleave="hoveredClimate = null" @focus="hoveredClimate = { index, label: climateLabels[index], value: height }" @blur="hoveredClimate = null"><span v-if="hoveredClimate?.index === index" class="bar-tooltip">{{ climateLabels[index] }} / {{ height }}</span></div></div><div v-if="hoveredClimate" class="chart-caption">{{ hoveredClimate.label }} climate stress: <b>{{ hoveredClimate.value }}</b> / 100</div><div class="mini-labels"><span>JUN</span><span>SEP</span><span>DEC</span><span>MAR</span></div>
       </article>
 
       <article class="panel impact-panel">
         <div class="panel-heading"><div><p class="kicker">GRANT IMPACT</p><h3>Outcomes over time</h3></div><span class="period-chip">Cumulative</span></div>
         <div class="impact-number"><strong>{{ shownImpact[shownImpact.length - 1] }}<sup>%</sup></strong><span>target outcomes reached</span></div>
-        <div class="impact-chart"><svg viewBox="0 0 800 210" preserveAspectRatio="none"><defs><linearGradient id="impactFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#dd684e" stop-opacity=".25"/><stop offset="1" stop-color="#dd684e" stop-opacity="0"/></linearGradient></defs><polygon :points="'0,210 ' + shownImpact.map((v, i) => `${i * 114},${210 - v * 2.4}`).join(' ') + ' 800,210'" fill="url(#impactFill)"/><polyline :points="shownImpact.map((v, i) => `${i * 114},${210 - v * 2.4}`).join(' ')" fill="none" stroke="#d65f48" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="impact-footer"><span>Baseline</span><span>Current</span><span>Target <b>80%</b></span></div>
+        <div class="impact-chart"><svg viewBox="0 0 800 210" preserveAspectRatio="none"><defs><linearGradient id="impactFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#dd684e" stop-opacity=".25"/><stop offset="1" stop-color="#dd684e" stop-opacity="0"/></linearGradient></defs><polygon :points="'0,210 ' + shownImpact.map((v, i) => `${i * 114},${210 - v * 2.4}`).join(' ') + ' 800,210'" fill="url(#impactFill)"/><polyline :points="shownImpact.map((v, i) => `${i * 114},${210 - v * 2.4}`).join(' ')" fill="none" stroke="#d65f48" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle v-for="(value, index) in shownImpact" :key="index" :cx="index * 114" :cy="210 - value * 2.4" r="8" class="impact-hover-point" tabindex="0" @mouseenter="hoveredImpact = { label: data.labels[index], value }" @mouseleave="hoveredImpact = null" @focus="hoveredImpact = { label: data.labels[index], value }" @blur="hoveredImpact = null"/></svg><div v-if="hoveredImpact" class="chart-tooltip impact-tooltip"><b>{{ hoveredImpact.label }}</b><span>{{ hoveredImpact.value }}% target outcomes reached</span></div></div><div class="impact-footer"><span>Baseline</span><span>Current</span><span>Target <b>80%</b></span></div>
       </article>
 
       <article class="panel status-panel">
@@ -130,7 +145,7 @@ function selectPeriod(value) { period.value = value }
 
       <article class="panel trend-panel">
         <div class="panel-heading"><div><p class="kicker">FORWARD LOOK</p><h3>Projected spending</h3></div><span class="period-chip">Next 6 months</span></div>
-        <div class="projection"><strong>$22.4M</strong><span>planned deployment</span></div><div class="projection-bars"><div v-for="(month, index) in ['JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV']" :key="month" class="projection-col"><div class="projection-bar" :style="{ height: [45, 58, 52, 74, 68, 89][index] + '%' }"><span>${[2.4, 3.1, 2.8, 4.2, 3.8, 4.9][index]}M</span></div><small>{{ month }}</small></div></div>
+        <div class="projection"><strong>$22.4M</strong><span>planned deployment</span></div><div class="projection-bars"><div v-for="(month, index) in projectionLabels" :key="month" class="projection-col"><div class="projection-bar" :class="{ hovered: hoveredProjection?.index === index }" :style="{ height: [45, 58, 52, 74, 68, 89][index] + '%' }" tabindex="0" @mouseenter="hoveredProjection = { index, month, value: projectionValues[index] }" @mouseleave="hoveredProjection = null" @focus="hoveredProjection = { index, month, value: projectionValues[index] }" @blur="hoveredProjection = null"><span>${{ projectionValues[index] }}M</span></div><small>{{ month }}</small></div></div><div v-if="hoveredProjection" class="chart-caption projection-caption">{{ hoveredProjection.month }} planned deployment: <b>${{ hoveredProjection.value }}M</b></div>
       </article>
 
       <article class="panel gaps-panel">
