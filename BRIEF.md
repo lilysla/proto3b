@@ -3,7 +3,6 @@ An interacgive data analytics interface to view local government grants and fund
 
 ## Tech
 - Create a new Vue project
-- Use Vite with Typescript and Vue Router. Then add Vuetify 3 with Material Design Icons, and also install chart.js and vue-chartjs for data visualizations. Set everything up and open the project
 - Deploys to Vercel as a static site 
 
 ## Design
