@@ -2,6 +2,8 @@
 An interacgive data analytics interface to view local government grants and funding for Sun City. Sun City is a mid-size city of 350,000 residents and has been suffering from droughts in recent years. They want to efficiently understand how much money they received and which grants and proposals need more attention. Program officers want to view funding trends and identify outliers to determine the best method to address them. This interface will be used and displayed on a large screen during leadership meetings. 
 
 ## Tech
+- Create a new Vue project
+- Use Vite with Typescript and Vue Router. Then add Vuetify 3 with Material Design Icons, and also install chart.js and vue-chartjs for data visualizations. Set everything up and open the project
 - Deploys to Vercel as a static site 
 
 ## Design
